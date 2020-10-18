@@ -43,7 +43,10 @@ public:
 	int predict(vector<double> features) {
 		vector<pair<double, int>> distancesAndLabels = {};
 		for (int i = 0; i < learningData.size(); ++i) {
-			double dist = euclideanDistance(learningData[i], features);
+			double dist;
+			if (metric == 0) {
+				dist = euclideanDistance(learningData[i], features);
+			}
 			int ff = (int)learningData[i][targetColumn];
 			distancesAndLabels.push_back({ dist, ff });
 		}
@@ -97,10 +100,19 @@ public:
 };
 
 
-int main() {
-	Knn* knn = new Knn(7,3);
+int main(int argc, char* argv[]) {
+	for (int i = 0; i < argc; ++i) {
+		cout << argv[i] << endl;
+	}
+
+	int a = stoi(argv[1]);
+	string s = argv[2];
+	cout << s;
+	/*
+	Knn* knn = new Knn(7,0);
 	knn->loadData("output.csv", 14, 30);
 	double accuracy = knn->checkAccuracy();
 	cout << endl << accuracy;
 	delete knn;
+	*/
 }
