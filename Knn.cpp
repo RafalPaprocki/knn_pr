@@ -6,9 +6,9 @@ private:
 	int k_numbers;
 	int metric;
 	int targetColumn;
+public:
 	vector<vector<double>> trainData;
 	vector<vector<double>> learningData;
-public:
 	Knn(int k = 1, int m = 1) {
 		k_numbers = k;
 		metric = m;
@@ -24,7 +24,7 @@ public:
 	}
 
 	void loadData(string file, int targetColumnNumber, int trainingPercent = 30) {
-		targetColumn = targetColumnNumber;
+		targetColumn = targetColumnNumber - 1;
 		vector<vector<double>> data = readFromCsvWithoutLabels(file);
 		std::random_shuffle(data.begin(), data.end());
 		for (int i = 0; i < data.size(); ++i) {
@@ -34,28 +34,73 @@ public:
 			cout << endl;
 		}
 		int startIndex = (trainingPercent / 100.0) * data.size();
-		vector<vector<double>> trainData(data.end() - startIndex, data.begin() + data.size());
+		vector<vector<double>> train(data.end() - startIndex, data.begin() + data.size());
 		data.erase(data.end() - startIndex, data.begin() + data.size());
 		learningData = data;
+		trainData = train;
 	}
 
-	double predict(vector<double> features) {
+	int predict(vector<double> features) {
+		vector<pair<double, int>> distancesAndLabels = {};
+		for (int i = 0; i < learningData.size(); ++i) {
+			double dist = euclideanDistance(learningData[i], features);
+			int ff = (int)learningData[i][targetColumn];
+			distancesAndLabels.push_back({ dist, ff });
+		}
 
+		sort(distancesAndLabels.begin(), distancesAndLabels.end());
+		vector<int> nearestResults = {0, 0};
+		for (int i = 0; i < k_numbers; ++i) {
+			nearestResults[(int)distancesAndLabels[i].second]++;
+		}
+		if (nearestResults[0] > nearestResults[1]) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
 	}
 
-	double validate() {
+	double checkAccuracy() {
+		int good = 0;
+		int bad = 0;
+		for (int i = 0; i < trainData.size(); ++i) {
+			int predictedTarget = predict(trainData[i]);
+			if (predictedTarget == trainData[i][targetColumn]) {
+				++good;
+			}
+			else {
+				++bad;
+			}
+		}
 
+		return good / (double)(good + bad);
 	}
 
-	double euclideanDistance() {
+	double euclideanDistance(vector<double> learning, vector<double> target) {
+		vector<double> distanceSquares = {};
+		double euclideanDistance = 0;
+		for (int i = 0; i < learning.size(); ++i) {
+			if (i != targetColumn) {
+				double diff = learning[i] - target[i];
+				distanceSquares.push_back(diff * diff);
+			}
+		}
 
+		for (int i = 0; i < distanceSquares.size(); ++i) {
+			euclideanDistance += distanceSquares[i];
+		}
+
+		euclideanDistance = sqrt(euclideanDistance);
+		return euclideanDistance;
 	}
 };
 
 
-
 int main() {
-	Knn* knn = new Knn(2,3);
-	knn->loadData("heart.csv", 14, 30);
+	Knn* knn = new Knn(7,3);
+	knn->loadData("output.csv", 14, 30);
+	double accuracy = knn->checkAccuracy();
+	cout << endl << accuracy;
 	delete knn;
 }
